@@ -3,9 +3,17 @@
 #pragma once
 
 // IPV4,IPV6 enum
-enum IPFamily{
-    AF_INET,
-    AF_INET6
+enum class IPFamily{
+    AF_INET = 2,
+    AF_INET6 = 23
+};
+enum class SOCK_TYPE{
+    SOCK_STREAM = 1, // TCP
+    SOCK_DGRAM = 2// UDP
+};
+enum class SOCK_NAME{
+    TCP,
+    UDP
 };
 
 

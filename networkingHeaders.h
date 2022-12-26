@@ -15,6 +15,7 @@
 #define GETSOCKETERRNO() (WSAGetLastError())
 
 #else
+/* linux includes */
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -29,4 +30,10 @@
 #define SOCKET int
 #define GETSOCKETERRNO() (errno)
 
+#endif
+
+// Vista and later support duel stack sockets, however many windows sockets
+// are missing the definition
+#ifndef IPV6_ONLY
+#define IPV6_V6ONLY 27
 #endif

@@ -1,10 +1,9 @@
-#include "mTCP.h"
+#include "mServerTCP.h"
 
-mTCP::mTCP() = default;
+mServerTCP::mServerTCP() = default;
 
-bool mTCP::mCreateTCP()
+bool mServerTCP::mCreate(std::string _port)
 {
-
     // Set version for winsock2
     #if defined(_WIN32)
 	// WSADATA d;
@@ -14,6 +13,7 @@ bool mTCP::mCreateTCP()
 	}
     #endif
 
+    // TODO ALTER TO C++
 	printf("Configuring local address...\n");
 	struct addrinfo hints;
 	memset(&hints, 0, sizeof(hints));
@@ -27,7 +27,7 @@ bool mTCP::mCreateTCP()
 	struct addrinfo* bind_address;
 	/* getaddrinfo here generates an address for bind() */
 	/* to do this we pass null as first param */
-	getaddrinfo(0, "8080", &hints, &bind_address);
+	getaddrinfo(0, _port.c_str(), &hints, &bind_address);
 
 	printf("Creating socket...\n");
 	// SOCKET socket_listen;
@@ -59,10 +59,9 @@ bool mTCP::mCreateTCP()
 	}
 	/* release address memory */
 	freeaddrinfo(bind_address);
-
 }
 
-bool mTCP::mListenTCP(int connections)
+bool mServerTCP::mListen(int connections)
 {
     /* Start listening */
     std::cout << "Listening called..." << std::endl;
@@ -75,8 +74,12 @@ bool mTCP::mListenTCP(int connections)
 	/* accept any incoming connections */
 }
 
-bool mTCP::mAcceptTCP()
+bool mServerTCP::mAccept()
 {
+
+    // TODO Create mew client object as unique ptr
+    // add the client to the clients vector 
+
     std::cout << "acceptTCP() called" << std::endl;
 	/* we have to store the clients connection info */
 	/* the type will guarentee the type is large enough to hold this data */
@@ -105,7 +108,27 @@ bool mTCP::mAcceptTCP()
     return true;
 }
 
-bool mTCP::mRecv(mClient _client)
+
+
+bool mServerTCP::mSend(mClient _client, std::string _msg)
+{
+    send(_client.getSocketClient(), _msg.c_str(), strlen(_msg.c_str()), 0);
+}
+
+
+bool mServerTCP::mBroadcast(std::string _msg){
+
+    /* for each client */
+    for(auto c : clients){
+        /* send msg */
+        send(c.getSocketClient(), _msg.c_str(), strlen(_msg.c_str()), 0);
+    }
+
+    return true;
+}
+
+
+bool mServerTCP::mRecv(mClient _client)
 {
 	/* we now expect a https reuqest since this is setup to be a webserver */
 	printf("Reading request...\n");
@@ -121,18 +144,7 @@ bool mTCP::mRecv(mClient _client)
     return true;
 }
 
-bool mTCP::mBroadcast(std::string _msg)
-{
-    /* for each client */
-    for(auto c : clients){
-        /* send msg */
-        send(c.getSocketClient(), _msg.c_str(), strlen(_msg.c_str()), 0);
-    }
-
-    return true;
-}
-
-bool mTCP::mCloseTCP()
+bool mServerTCP::mClose()
 {
     /* close all client tcp sockets and local listen socket*/
     for (auto c : clients)
