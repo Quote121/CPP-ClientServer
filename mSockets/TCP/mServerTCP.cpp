@@ -1,6 +1,8 @@
 #include "mServerTCP.h"
 
+
 mServerTCP::mServerTCP() = default;
+
 
 bool mServerTCP::mCreate(std::string _port)
 {
@@ -59,7 +61,9 @@ bool mServerTCP::mCreate(std::string _port)
 	}
 	/* release address memory */
 	freeaddrinfo(bind_address);
+
 }
+
 
 bool mServerTCP::mListen(int connections)
 {
@@ -74,11 +78,9 @@ bool mServerTCP::mListen(int connections)
 	/* accept any incoming connections */
 }
 
+
 bool mServerTCP::mAccept()
 {
-
-    // TODO Create mew client object as unique ptr
-    // add the client to the clients vector 
 
     std::cout << "acceptTCP() called" << std::endl;
 	/* we have to store the clients connection info */
@@ -105,9 +107,13 @@ bool mServerTCP::mAccept()
 		NI_NUMERICHOST);
 	printf("%s\n", address_buffer);
 
+
+	// Add to list of clients
+	std::unique_ptr<mClient> mc = std::make_unique<mClient>(mClient(client_address, client_len, socket_client, std::time(nullptr)));
+	clients.push_back(std::move(mc));
+
     return true;
 }
-
 
 
 bool mServerTCP::mSend(mClient _client, std::string _msg)
@@ -119,9 +125,9 @@ bool mServerTCP::mSend(mClient _client, std::string _msg)
 bool mServerTCP::mBroadcast(std::string _msg){
 
     /* for each client */
-    for(auto c : clients){
+    for(auto& c : clients){
         /* send msg */
-        send(c.getSocketClient(), _msg.c_str(), strlen(_msg.c_str()), 0);
+        send(c->getSocketClient(), _msg.c_str(), strlen(_msg.c_str()), 0);
     }
 
     return true;
@@ -130,6 +136,7 @@ bool mServerTCP::mBroadcast(std::string _msg){
 
 bool mServerTCP::mRecv(mClient _client)
 {
+
 	/* we now expect a https reuqest since this is setup to be a webserver */
 	printf("Reading request...\n");
 	/* Can make dynamic array to read into */
@@ -147,9 +154,9 @@ bool mServerTCP::mRecv(mClient _client)
 bool mServerTCP::mClose()
 {
     /* close all client tcp sockets and local listen socket*/
-    for (auto c : clients)
+    for (auto& c : clients)
     {
-        CLOSESOCKET(c.getSocketClient());
+        CLOSESOCKET(c->getSocketClient());
     }
     /* close listening socket */
     CLOSESOCKET(socket_listen);

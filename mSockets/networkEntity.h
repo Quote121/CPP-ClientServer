@@ -1,6 +1,5 @@
 #pragma once
 
-
 #ifndef NETWORKENTITY_H
 #define NETWORKENTITY_H
 
@@ -20,12 +19,11 @@ public:
     virtual ~NetworkEntity(){}
 
     // Sending data to a particular socket
-    virtual bool mSend(mClient _client, std::string _msg);
+    virtual bool mSend(mClient _client, std::string _msg) = 0;
     // receving data from a particular socket
     virtual bool mRecv(mClient _client) = 0;
     // Close all connections and call detructors for all allocated recorses
-    virtual bool mClose();
-
+    virtual bool mClose() = 0; // Pure virtual funtion
 
     // Getters and setters
     void setSockType(SOCK_TYPE st){
@@ -41,7 +39,6 @@ public:
     IPFamily getIPFamily(){
         return ipFam;
     }
-
 
 };
 

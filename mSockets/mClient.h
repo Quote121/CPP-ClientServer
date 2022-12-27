@@ -3,7 +3,7 @@
 #define MCLINET_H
 
 #include "common.h"
-
+#include <ctime>
 
 class mClient{
 private:
@@ -11,13 +11,13 @@ private:
     socklen_t client_len; // change, will be set
     IPFamily ip_family; // AF_INET, AF_INET6
     SOCKET socket_client;
-    int connectionTime; // Time when the client connected
+    std::time_t connectionTime; // Time when the client connected
     bool connected; // Flag might not be needed
 
 public:
     mClient();
     // Other initalise list, move to .cpp
-    mClient(struct sockaddr_storage _client_address, socklen_t _client_len, IPFamily _ip_family, SOCKET _socket_client, int _connectionTime);
+    mClient(struct sockaddr_storage _client_address, socklen_t _client_len, SOCKET _socket_client, int _connectionTime);
 
     // Getters and setters
 

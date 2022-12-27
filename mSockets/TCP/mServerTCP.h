@@ -10,6 +10,8 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <memory>
+
 
 class mServerTCP : NetworkEntity{
 private:
@@ -19,7 +21,7 @@ private:
     WSADATA d;
     SOCKET socket_listen;
 
-    std::vector<mClient> clients;
+    std::vector<std::unique_ptr<mClient>> clients;
 
 public:
     mServerTCP();

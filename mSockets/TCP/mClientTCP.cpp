@@ -18,7 +18,6 @@ bool mClientTCP::mCreate(std::string hostName, std::string port)
 	}
 #endif
 
-	printf("Configuring remote address...\n");
 	struct addrinfo hints;
 	memset(&hints, 0, sizeof(hints));
 	// TCP UDP(SOCK_DGRAM)
@@ -70,7 +69,23 @@ bool mClientTCP::mConnect()
 
 bool mClientTCP::mRecv(mClient _client)
 {
+	char read[4096];
 
+	int bytes_recived = recv(socket_peer, read, 4096, 0);
+	
+	// TODO write this
+	// Keep reading in our expaning byte array 4KiB at a time
+	while (bytes_recived >= 1){
+		
+	}
+
+	if (bytes_recived < 1) {
+
+		printf("Connection closed by peer.\n");
+	}
+
+	printf("Recived (%d bytes): %.*s",
+		bytes_recived, bytes_recived, read);
 }
 
 bool mClientTCP::mSend(mClient _client, std::string _msg)

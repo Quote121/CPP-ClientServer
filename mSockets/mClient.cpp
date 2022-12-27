@@ -2,10 +2,9 @@
 
 mClient::mClient() = default;
 
-mClient::mClient(struct sockaddr_storage _client_address, socklen_t _client_len, IPFamily _ip_family, SOCKET _socket_client, int _connectionTime) :
+mClient::mClient(struct sockaddr_storage _client_address, socklen_t _client_len, SOCKET _socket_client, int _connectionTime) :
         client_address(_client_address),
         client_len(_client_len),
-        ip_family(_ip_family),
         socket_client(_socket_client),
         connectionTime(_connectionTime){}
     
