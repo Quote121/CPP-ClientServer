@@ -1,9 +1,5 @@
 #include "mServerTCP.h"
 
-
-mServerTCP::mServerTCP() = default;
-
-
 bool mServerTCP::mCreate(std::string _port)
 {
     // Set version for winsock2
@@ -134,21 +130,26 @@ bool mServerTCP::mBroadcast(std::string _msg){
 }
 
 
-bool mServerTCP::mRecv(mClient _client)
+std::string mServerTCP::mRecv(mClient _client)
 {
 
-	/* we now expect a https reuqest since this is setup to be a webserver */
-	printf("Reading request...\n");
-	/* Can make dynamic array to read into */
-	/* increase size etc */
-	char request[1024];
-	int bytes_received = recv(_client.getSocketClient(), request, 1024, 0);
-	printf("Received %d bytes.\n", bytes_received);
+	// TODO check
+	int read_buffer_size = 1024;
+	char* read_buffer = (char*)calloc(read_buffer_size, sizeof(char));
 
-	/* print bytes_received number of request*/
-	printf("%.*s", bytes_received, request);
+	int bytes_recived = 0;
+	do {
+		// Resize the read in buffer
+		if (bytes_recived >= read_buffer_size){
+			// Double input buffer size
+			read_buffer = (char*)realloc(read_buffer, read_buffer_size *= 2);
+		}
+	// Keep reading while there is data
+	} while ((bytes_recived = recv(_client.getSocketClient(), read_buffer, 1024, 0)) > 0);
 
-    return true;
+	std::string msg = read_buffer;
+	free(read_buffer);
+	return msg;
 }
 
 bool mServerTCP::mClose()
@@ -169,4 +170,8 @@ bool mServerTCP::mClose()
     /* call destructors */
 
     return true;
+}
+
+mClient mServerTCP::getClientAtIndex(int i){
+	return *mServerTCP::clients.at(i);
 }

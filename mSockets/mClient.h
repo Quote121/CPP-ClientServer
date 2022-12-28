@@ -13,6 +13,7 @@ private:
     SOCKET socket_client;
     std::time_t connectionTime; // Time when the client connected
     bool connected; // Flag might not be needed
+    std::string alias; // Username // max 16 chars
 
 public:
     mClient();

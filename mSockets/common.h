@@ -16,6 +16,13 @@ enum class SOCK_TYPE{
 //     UDP
 // };
 
+// Packet struct
+typedef struct PACKET{
+    std::string msg;
+    time_t time;
+    mClient sender;
+};
+
 
 #if defined(_WIN32)
 

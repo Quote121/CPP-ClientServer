@@ -4,7 +4,6 @@
 #define MSERVERTCP_H
 
 #include "../common.h" // Common network includes
-#include "../networkEntity.h" // Network abstract class
 #include "../mClient.h" // Client class
 
 #include <vector>
@@ -13,7 +12,7 @@
 #include <memory>
 
 
-class mServerTCP : NetworkEntity{
+class mServerTCP{
 private:
 
     // For tcp socket creation,
@@ -21,10 +20,11 @@ private:
     WSADATA d;
     SOCKET socket_listen;
 
-    std::vector<std::unique_ptr<mClient>> clients;
-
+    static std::vector<std::unique_ptr<mClient>> clients;
 public:
-    mServerTCP();
+    
+
+    mServerTCP() = default;
 
     // Create the tcp socket and bind to port
     bool mCreate(std::string _port);
@@ -36,16 +36,18 @@ public:
     bool mAccept();
 
     // Send message to specified client
-    bool mSend(mClient _client, std::string _msg) override;
+    bool mSend(mClient _client, std::string _msg);
 
     // Recieve from specific client
-    bool mRecv(mClient _client) override;
+    std::string mRecv(mClient _client);
 
     // Send message to all clients
     bool mBroadcast(std::string _msg);
 
     // Close all clients and server
-    bool mClose() override;
+    bool mClose();
+
+    static mClient getClientAtIndex(int i);
 
 };
 

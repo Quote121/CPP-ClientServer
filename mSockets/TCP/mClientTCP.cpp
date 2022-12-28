@@ -1,6 +1,5 @@
 #include "mClientTCP.h"
 
-#include <iostream>
 
 bool mClientTCP::mCreate(std::string hostName, std::string port)
 {
@@ -66,31 +65,40 @@ bool mClientTCP::mConnect()
 }
 
 
-
-bool mClientTCP::mRecv(mClient _client)
+// Recieve packet struct
+// From the server
+std::string mClientTCP::mRecv()
 {
-	char read[4096];
-
-	int bytes_recived = recv(socket_peer, read, 4096, 0);
+	// C like for speed
 	
-	// TODO write this
-	// Keep reading in our expaning byte array 4KiB at a time
-	while (bytes_recived >= 1){
-		
-	}
+	int read_buffer_size = 1024;
+	char* read_buffer = (char*)calloc(read_buffer_size, sizeof(char));
 
-	if (bytes_recived < 1) {
+	int bytes_recived = 0;
+	do {
+		// Resize the read in buffer
+		if (bytes_recived >= read_buffer_size){
+			// Double input buffer size
+			read_buffer = (char*)realloc(read_buffer, read_buffer_size *= 2);
+		}
+	// Keep reading while there is data
+	} while ((bytes_recived = recv(socket_peer, read_buffer, 1024, 0)) > 0);
 
-		printf("Connection closed by peer.\n");
-	}
+	// TODO we need to pass the sender of the message via the packet to the user
+	// I.E we need a serializer and deserializer
 
-	printf("Recived (%d bytes): %.*s",
-		bytes_recived, bytes_recived, read);
+	// Call decerializer and then return the packet struct to the caller
+
+	std::string msg = read_buffer;
+	free(read_buffer);
+	
+	return msg;
 }
 
-bool mClientTCP::mSend(mClient _client, std::string _msg)
+bool mClientTCP::mSend(std::string _msg)
 {
-
+	// Send to socket peer (server)
+	send(socket_peer, _msg.c_str(), strlen(_msg.c_str()), 0);
 }
 
 bool mClientTCP::mClose()
@@ -105,3 +113,12 @@ bool mClientTCP::mClose()
 	printf("Closed.\n");
     return true;
 }
+
+// // Getters and setters
+// SOCKET mClientTCP::getSocket(){
+// 	return socket_peer;
+// }
+// struct addrinfo* mClientTCP::getPeerAddress()
+// {
+// 	return peer_address;
+// }

@@ -28,3 +28,7 @@
 *.app
 
 .vscode
+EXAMPLE
+TEST
+*.png
+*.jpg

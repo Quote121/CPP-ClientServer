@@ -4,26 +4,34 @@
 #define MCLIENTTCP_H
 
 #include "../common.h"
-#include "../networkEntity.h"
 #include "../mClient.h"
+#include <iostream>
 
-class mClientTCP : NetworkEntity{
+class mClientTCP{
 private:
     
     SOCKET socket_peer;
     struct addrinfo* peer_address;
+    
 
 public:
+    mClientTCP() = default;
 
     bool mCreate(std::string hostName, std::string port);
 
     bool mConnect();
 
-    bool mRecv(mClient _client) override;
+    // TODO return packet for processing
+    std::string mRecv();
 
-    bool mSend(mClient _client, std::string _msg) override;
+    bool mSend(std::string _msg);
 
-    bool mClose() override;
+    bool mClose();
+
+
+    // SOCKET getSocket();
+    // struct addrinfo* getPeerAddress();
+
 
 };
 
