@@ -2,6 +2,12 @@
 
 #pragma once
 
+#ifndef COMMON_H
+#define COMMON_H
+
+#include <ctime>
+#include <string>
+
 // IPV4,IPV6 enum
 enum class IPFamily{
     AF_INET = 2,
@@ -17,11 +23,11 @@ enum class SOCK_TYPE{
 // };
 
 // Packet struct
-typedef struct PACKET{
-    std::string msg;
-    time_t time;
-    mClient sender;
-};
+// typedef struct PACKET{
+//     std::string msg;
+//     time_t time;
+//     mClient sender;
+// };
 
 
 #if defined(_WIN32)
@@ -54,3 +60,5 @@ typedef struct PACKET{
 #define GETSOCKETERRNO() (errno)
 
 #endif
+
+#endif // COMMON_H

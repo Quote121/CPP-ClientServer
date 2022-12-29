@@ -1,12 +1,15 @@
 #include "mServerTCP.h"
 
+// Static variable definition
+std::vector<std::unique_ptr<mClient>> mServerTCP::clients;
+
 bool mServerTCP::mCreate(std::string _port)
 {
     // Set version for winsock2
     #if defined(_WIN32)
 	// WSADATA d;
 	if (WSAStartup(MAKEWORD(2, 2), &d)) {
-        std::cerr << "Failed to initalize." << std::endl;
+        std::cerr << "Failed to initalize." << errno << std::endl;
 		return false;
 	}
     #endif
@@ -25,7 +28,10 @@ bool mServerTCP::mCreate(std::string _port)
 	struct addrinfo* bind_address;
 	/* getaddrinfo here generates an address for bind() */
 	/* to do this we pass null as first param */
-	getaddrinfo(0, _port.c_str(), &hints, &bind_address);
+	if (getaddrinfo(0, _port.c_str(), &hints, &bind_address)){
+		std::cerr << "mServerTCPCreate error.\ngetaddrinfo() failed. (" << GETSOCKETERRNO() << ")" << std::endl;
+		return false;
+	}
 
 	printf("Creating socket...\n");
 	// SOCKET socket_listen;
@@ -38,12 +44,21 @@ bool mServerTCP::mCreate(std::string _port)
 		return false;
 	}
 
+
 	/* implementation of duel stack ipv4 and ipv6 */
 	/* when an ipv4 connection connects the ipv4 is remapped to ipv6 */
 	/* first 96 bits are 0:0:0:0:0:ffff and the last 32 bits are the ipv4 address */
-	if (setsockopt(socket_listen, IPPROTO_IPV6, IPV6_V6ONLY, NULL, NULL)) 
+
+	// WORKS
+// if (retCode = setsockopt(socket_listen, IPPROTO_IPV6, IPV6_V6ONLY, (char*)&retCode, sizeof(&retCode)))
+
+	// optCode has to be used otherwise we throw an error, dont know why. Just do it
+	int optCode = 0;
+	if (setsockopt(socket_listen, IPPROTO_IPV6, IPV6_V6ONLY, 
+				reinterpret_cast<char *>(&optCode), sizeof(optCode)))
     {
         std::cerr << "setsockopt() failed. (" << GETSOCKETERRNO() << ")" << std::endl;
+
 	}
 
 	/* Bindt socket to local address */
@@ -57,7 +72,7 @@ bool mServerTCP::mCreate(std::string _port)
 	}
 	/* release address memory */
 	freeaddrinfo(bind_address);
-
+	return true;
 }
 
 
@@ -66,7 +81,7 @@ bool mServerTCP::mListen(int connections)
     /* Start listening */
     std::cout << "Listening called..." << std::endl;
 	/* 10 connections are allowed to queue up */
-	if (listen(socket_listen, 10) < 0) {
+	if (listen(socket_listen, connections) < 0) {
         std::cerr << "listen() failed. (" << GETSOCKETERRNO() << ")" << std::endl;
 		return false;
 	}
@@ -88,6 +103,7 @@ bool mServerTCP::mAccept()
     /* potentially blocking*/
 	SOCKET socket_client = accept(socket_listen,
 		(struct sockaddr*) &client_address, &client_len);
+
 	if (!ISVALIDSOCKET(socket_client)) {
         std::cerr << "accept() failed. (" << GETSOCKETERRNO() << ")" << std::endl;
 		return false;
@@ -106,7 +122,7 @@ bool mServerTCP::mAccept()
 
 	// Add to list of clients
 	std::unique_ptr<mClient> mc = std::make_unique<mClient>(mClient(client_address, client_len, socket_client, std::time(nullptr)));
-	clients.push_back(std::move(mc));
+	addClientToList(std::move(mc));
 
     return true;
 }
@@ -115,6 +131,7 @@ bool mServerTCP::mAccept()
 bool mServerTCP::mSend(mClient _client, std::string _msg)
 {
     send(_client.getSocketClient(), _msg.c_str(), strlen(_msg.c_str()), 0);
+	return true;
 }
 
 
@@ -158,6 +175,7 @@ bool mServerTCP::mClose()
     for (auto& c : clients)
     {
         CLOSESOCKET(c->getSocketClient());
+		removeClientFromList(std::move(c));
     }
     /* close listening socket */
     CLOSESOCKET(socket_listen);
@@ -172,6 +190,30 @@ bool mServerTCP::mClose()
     return true;
 }
 
-mClient mServerTCP::getClientAtIndex(int i){
-	return *mServerTCP::clients.at(i);
+// Client list access methods // All should be atomic
+
+mClient mServerTCP::getClientAtIndex(int i)
+{
+	return *clients.at(i);
+}
+
+void mServerTCP::addClientToList(std::unique_ptr<mClient> _client)
+{
+	mtx.lock();
+
+	clients.push_back(std::move(_client));
+
+	mtx.unlock();
+}
+
+// Might need overloading based on name and socket address etc.
+// TODO NOT WORKING
+void mServerTCP::removeClientFromList(std::unique_ptr<mClient> _client)
+{	
+	mtx.lock();
+
+	clients.push_back(std::move(_client));
+	// Use algorithms find methods
+
+	mtx.unlock();
 }

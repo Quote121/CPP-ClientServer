@@ -10,7 +10,7 @@
 #include <string>
 #include <iostream>
 #include <memory>
-
+#include <mutex>
 
 class mServerTCP{
 private:
@@ -21,7 +21,10 @@ private:
     SOCKET socket_listen;
 
     static std::vector<std::unique_ptr<mClient>> clients;
+
 public:
+    // For thread access to clients
+    std::mutex mtx;
     
 
     mServerTCP() = default;
@@ -49,7 +52,13 @@ public:
 
     static mClient getClientAtIndex(int i);
 
+    void addClientToList(std::unique_ptr<mClient> _client);
+
+    void removeClientFromList(std::unique_ptr<mClient> _client);
+
 };
+
+
 
 
 #endif // MSERVERTCP_H

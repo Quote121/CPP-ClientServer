@@ -46,14 +46,17 @@ bool mClientTCP::mCreate(std::string hostName, std::string port)
 		std::cerr << "mTCP::ClientCreateTCP error.\nsocket() failed. (" << GETSOCKETERRNO() << ")" << std::endl;
 		return false;
 	}
+	return true;
 }
 
 bool mClientTCP::mConnect()
 {
 	// Connect
 	printf("Connecting...\n");
+	
 	if (connect(socket_peer,
 		peer_address->ai_addr, peer_address->ai_addrlen)) {
+		
 		fprintf(stderr, "connect() failed. (%d)\n", GETSOCKETERRNO());
 		return false;
 	}
@@ -91,7 +94,7 @@ std::string mClientTCP::mRecv()
 
 	std::string msg = read_buffer;
 	free(read_buffer);
-	
+
 	return msg;
 }
 
@@ -99,6 +102,7 @@ bool mClientTCP::mSend(std::string _msg)
 {
 	// Send to socket peer (server)
 	send(socket_peer, _msg.c_str(), strlen(_msg.c_str()), 0);
+	return true;
 }
 
 bool mClientTCP::mClose()

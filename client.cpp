@@ -11,9 +11,16 @@ int main(){
     mcTCP->mCreate("127.0.0.1", "8080");
     mcTCP->mConnect();
 
-    mcTCP->mSend("Hello");
-    mcTCP->mRecv();
+    while(1){
+        mcTCP->mSend("Hello");
+        mcTCP->mRecv();
+    }
+    
+
+
     mcTCP->mClose();
+
+    delete(mcTCP);
 
     return 0;
 }

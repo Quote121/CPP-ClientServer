@@ -1,12 +1,14 @@
 # CC = x86_64-w64-mingw32-g++.exe # 64 bit compiler
+
 ifeq ($(OS),Windows_NT) # 32 bit compiler
 	CC := i686-w64-mingw32-g++.exe
-	# CC := x86_64-w64-mingw32-g++.exe
-else
+	FLAGS := -lws2_32 -Wall
+else 
 	CC := g++
+	FLAGS := -Wall
 endif
 
-FLAGS := -Wall
+# FLAGS := -Wall
 ##lboost_thread 
 CXX_STANDARD := 20
 BINARIES := client 
@@ -27,11 +29,27 @@ LIBRARY_PATHS =  -L"C:\msys64\mingw64\lib"
 
 all: ${BINARIES}
 
+## MISSING DEPENDENCIES
 client: client.cpp
 	${CC} -std=c++${CXX_STANDARD} ${PATHS} ${FLAGS} $^ -o $@ 
 
 server: server.cpp
 	${CC} -std=c++${CXX_STANDARD} $^ -o $@ ${FLAGS}
+
+
+## FULL COMPILATION
+clientTCP:
+	${CC} -std=c++${CXX_STANDARD} ./mSockets/TCP/mClientTCP.cpp ./mSockets/mClient.cpp client.cpp -o client.exe ${FLAGS}
+
+serverTCP:
+	${CC} -std=c++${CXX_STANDARD} ./mSockets/TCP/mServerTCP.cpp ./mSockets/mClient.cpp server.cpp -o server.exe ${FLAGS}
+
+
+
+timeServer:
+	gcc ./EXAMPLE/time_server.c -o timeServer.exe -lws2_32
+
+
 
 clean:
 	rm -rf *.o ${BINARIES} *.exe

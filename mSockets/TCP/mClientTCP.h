@@ -28,11 +28,6 @@ public:
 
     bool mClose();
 
-
-    // SOCKET getSocket();
-    // struct addrinfo* getPeerAddress();
-
-
 };
 
 
