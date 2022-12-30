@@ -2,6 +2,19 @@
 
 // Static variable definition
 std::vector<std::unique_ptr<mClient>> mServerTCP::clients;
+std::mutex mServerTCP::mutex_;
+mServerTCP* mServerTCP::pinstance_{nullptr};
+
+mServerTCP* mServerTCP::getInstance()
+{
+	// Lockguard will unlock once left scope, good for if we exit due to an error
+	std::lock_guard<std::mutex> lock(mutex_);
+    if (pinstance_ == nullptr)
+    {
+        pinstance_ = new mServerTCP();
+    }
+    return pinstance_;
+}
 
 bool mServerTCP::mCreate(std::string _port)
 {
@@ -199,21 +212,20 @@ mClient mServerTCP::getClientAtIndex(int i)
 
 void mServerTCP::addClientToList(std::unique_ptr<mClient> _client)
 {
-	mtx.lock();
+	std::lock_guard<std::mutex> lock(clientMutex);
+
 
 	clients.push_back(std::move(_client));
 
-	mtx.unlock();
+	
 }
 
 // Might need overloading based on name and socket address etc.
 // TODO NOT WORKING
 void mServerTCP::removeClientFromList(std::unique_ptr<mClient> _client)
 {	
-	mtx.lock();
+	std::lock_guard<std::mutex> lock(clientMutex);
 
 	clients.push_back(std::move(_client));
 	// Use algorithms find methods
-
-	mtx.unlock();
 }

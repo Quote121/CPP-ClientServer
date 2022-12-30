@@ -14,20 +14,33 @@
 
 class mServerTCP{
 private:
+    // For threadsafe singleton
+    static mServerTCP * pinstance_;
+    static std::mutex mutex_;
 
     // For tcp socket creation,
     // wsadata only used for win32
     WSADATA d;
     SOCKET socket_listen;
 
-    static std::vector<std::unique_ptr<mClient>> clients;
+    // To stop initalization
+    mServerTCP() = default;
 
+    // To stop copy
+    mServerTCP(const mServerTCP&) = delete;
+
+    // To stop assignment
+    // = delete to not allow equal
+    mServerTCP& operator=(const mServerTCP&) = delete;
+
+    static std::vector<std::unique_ptr<mClient>> clients;
 public:
     // For thread access to clients
-    std::mutex mtx;
-    
+    std::mutex clientMutex;
 
-    mServerTCP() = default;
+    // Way we create an object, only one can be created
+    static mServerTCP* getInstance();
+
 
     // Create the tcp socket and bind to port
     bool mCreate(std::string _port);

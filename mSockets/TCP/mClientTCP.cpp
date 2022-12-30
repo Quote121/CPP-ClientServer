@@ -1,5 +1,19 @@
 #include "mClientTCP.h"
 
+// Static variable definitions
+std::mutex mClientTCP::mutex_;
+mClientTCP* mClientTCP::pinstance_{nullptr};
+
+// Singleton creation method
+mClientTCP* mClientTCP::getInstance()
+{
+	std::lock_guard<std::mutex> lock(mutex_);
+    if (pinstance_ == nullptr)
+    {
+        pinstance_ = new mClientTCP();
+    }
+    return pinstance_;
+}
 
 bool mClientTCP::mCreate(std::string hostName, std::string port)
 {

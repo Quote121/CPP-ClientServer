@@ -8,7 +8,9 @@
 
 int main(){
 
-    mServerTCP* msTCP = new mServerTCP();
+    // Singleton object
+    mServerTCP* msTCP = mServerTCP::getInstance();
+    
 
     msTCP->mCreate("8080");
     msTCP->mListen(10);
