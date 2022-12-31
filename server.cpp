@@ -18,10 +18,16 @@ int main(){
     // Accepts one person
     msTCP->mAccept();
 
-    // Recieve from 1st client
-    std::string recvMsg = msTCP->mRecv(mServerTCP::getClientAtIndex(0));
-    
-    msTCP->mBroadcast(recvMsg);
+    // Setup to be an echo server
+
+    while(true){
+
+        // Recieve from 1st client
+        std::string recvMsg = msTCP->mRecv(mServerTCP::getClientAtIndex(0));
+        std::cout << "Recieved message: " << recvMsg << std::endl;
+        msTCP->mBroadcast(recvMsg);
+    }
+
 
     msTCP->mClose();
     

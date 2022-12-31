@@ -2,10 +2,10 @@
 
 ifeq ($(OS),Windows_NT) # 32 bit compiler
 	CC := i686-w64-mingw32-g++.exe
-	FLAGS := -lws2_32 -Wall
+	FLAGS := -lws2_32 -Wall -g
 else 
 	CC := g++
-	FLAGS := -Wall
+	FLAGS := -Wall -g
 endif
 
 # FLAGS := -Wall
@@ -39,10 +39,10 @@ server: server.cpp
 
 ## FULL COMPILATION
 clientTCP:
-	${CC} -std=c++${CXX_STANDARD} ./mSockets/TCP/mClientTCP.cpp ./mSockets/mClient.cpp client.cpp -o client.exe ${FLAGS}
+	${CC} -std=c++${CXX_STANDARD} ./mSockets/TCP/mClientTCP.cpp ./mSockets/serializer.cpp ./mSockets/mClient.cpp client.cpp -o client.exe ${FLAGS}
 
 serverTCP:
-	${CC} -std=c++${CXX_STANDARD} ./mSockets/TCP/mServerTCP.cpp ./mSockets/mClient.cpp server.cpp -o server.exe ${FLAGS}
+	${CC} -std=c++${CXX_STANDARD} ./mSockets/TCP/mServerTCP.cpp ./mSockets/serializer.cpp ./mSockets/mClient.cpp server.cpp -o server.exe ${FLAGS}
 
 
 

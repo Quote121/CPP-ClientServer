@@ -2,11 +2,12 @@
 
 mClient::mClient() = default;
 
-mClient::mClient(struct sockaddr_storage _client_address, socklen_t _client_len, SOCKET _socket_client, int _connectionTime) :
+mClient::mClient(struct sockaddr_storage _client_address, socklen_t _client_len, SOCKET _socket_client, int _connectionTime, std::string _alias) :
         client_address(_client_address),
         client_len(_client_len),
         socket_client(_socket_client),
-        connectionTime(_connectionTime){}
+        connectionTime(_connectionTime),
+        alias(_alias){}
     
 struct sockaddr_storage mClient::getClient_address()
 {
@@ -56,4 +57,9 @@ int mClient::getConnectionTime()
 void mClient::setConnectionTime(int _connectionTime)
 {
     connectionTime = _connectionTime;
+}
+
+std::string mClient::getAlias()
+{
+    return alias;
 }

@@ -103,6 +103,7 @@ bool mServerTCP::mListen(int connections)
 }
 
 
+// TODO add a recv method where we first aquire the username of the user
 bool mServerTCP::mAccept()
 {
 
@@ -132,9 +133,10 @@ bool mServerTCP::mAccept()
 		NI_NUMERICHOST);
 	printf("%s\n", address_buffer);
 
+	std::string userName = getUserNameFromUser(socket_client);
 
 	// Add to list of clients
-	std::unique_ptr<mClient> mc = std::make_unique<mClient>(mClient(client_address, client_len, socket_client, std::time(nullptr)));
+	std::unique_ptr<mClient> mc = std::make_unique<mClient>(mClient(client_address, client_len, socket_client, std::time(nullptr), userName));
 	addClientToList(std::move(mc));
 
     return true;
@@ -143,6 +145,8 @@ bool mServerTCP::mAccept()
 
 bool mServerTCP::mSend(mClient _client, std::string _msg)
 {
+	// Call serializer here
+
     send(_client.getSocketClient(), _msg.c_str(), strlen(_msg.c_str()), 0);
 	return true;
 }
@@ -162,20 +166,47 @@ bool mServerTCP::mBroadcast(std::string _msg){
 
 std::string mServerTCP::mRecv(mClient _client)
 {
+	// A check to check if the socket is closed would be good here
 
 	// TODO check
 	int read_buffer_size = 1024;
 	char* read_buffer = (char*)calloc(read_buffer_size, sizeof(char));
 
 	int bytes_recived = 0;
-	do {
-		// Resize the read in buffer
-		if (bytes_recived >= read_buffer_size){
-			// Double input buffer size
-			read_buffer = (char*)realloc(read_buffer, read_buffer_size *= 2);
-		}
-	// Keep reading while there is data
-	} while ((bytes_recived = recv(_client.getSocketClient(), read_buffer, 1024, 0)) > 0);
+
+	///
+	/// Okay we can go about this in 2 ways
+	/// 1st we can have a delimiter at the end to indicate the end of a message
+	/// 2nd we can have a predefined message size at the beginning
+	/// I like the second more as we can have more control over message sizes
+	/// such as in the case of a oversized message
+	///
+	/// First we can do an inital recv to determine message length then we can go from there in a loop
+
+	int packet_size;
+	char packet_size_bytes[4];
+	recv(_client.getSocketClient(), packet_size_bytes, 4, 0);
+
+	std::cout << "Server recv()" << reinterpret_cast<int>(packet_size_bytes) << std::endl;
+
+
+	// Will be rewritten once we have sorted endinness
+	// while ((bytes_recived += recv(_client.getSocketClient(), read_buffer, 1024, 0)) > 0){
+	// 	// Resize the read in buffer
+	// 	if (bytes_recived >= read_buffer_size){
+	// 		// Double input buffer size
+	// 		read_buffer = (char*)realloc(read_buffer, read_buffer_size *= 2);
+	// 	}
+	// // Keep reading while there is data
+	// 	std::cout << "Bytes recieved" << bytes_recived << std::endl;
+	// }
+
+	bytes_recived = recv(_client.getSocketClient(), read_buffer, 1024, 0);
+	std::cout << "Bytes recieved" << bytes_recived << std::endl;
+	
+	PACKET p = serializer::deserialize(read_buffer); 
+	
+	
 
 	std::string msg = read_buffer;
 	free(read_buffer);
@@ -228,4 +259,27 @@ void mServerTCP::removeClientFromList(std::unique_ptr<mClient> _client)
 
 	clients.push_back(std::move(_client));
 	// Use algorithms find methods
+}
+
+
+std::string mServerTCP::getUserNameFromUser(SOCKET socket_client){
+		// get username
+	std::string userNameMsg = "Please enter your username. (Max 16 characters)";
+	// send user name msg
+	send(socket_client, userNameMsg.c_str(), strlen(userNameMsg.c_str()), 0);
+
+	/* loop until we have an acceptable sized username */
+	
+	// Max 16 chars
+	char buffer[16];
+
+	
+
+	memset(buffer, 0, 16); // Zero out buffer
+	// Read the client username into the buffer
+	recv(socket_client, buffer, 16, 0);
+
+	std::string s = buffer;
+
+	return s;
 }

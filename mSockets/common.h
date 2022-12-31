@@ -17,17 +17,6 @@ enum class SOCK_TYPE{
     SOCK_STREAM = 1, // TCP
     SOCK_DGRAM = 2// UDP
 };
-// enum class SOCK_NAME{
-//     TCP,
-//     UDP
-// };
-
-// Packet struct
-// typedef struct PACKET{
-//     std::string msg;
-//     time_t time;
-//     mClient sender;
-// };
 
 
 #if defined(_WIN32)

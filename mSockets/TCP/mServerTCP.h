@@ -5,12 +5,14 @@
 
 #include "../common.h" // Common network includes
 #include "../mClient.h" // Client class
+#include "../serializer.h" // For serializing and deserializing data
 
 #include <vector>
 #include <string>
 #include <iostream>
 #include <memory>
 #include <mutex>
+
 
 class mServerTCP{
 private:
@@ -63,11 +65,18 @@ public:
     // Close all clients and server
     bool mClose();
 
+    // All thread safe actions
+    // Return a client fron the list specified by the index
     static mClient getClientAtIndex(int i);
 
+    // Add client to the list of clients
     void addClientToList(std::unique_ptr<mClient> _client);
 
+    // Remove a client from the list of connected clients
     void removeClientFromList(std::unique_ptr<mClient> _client);
+
+    // Socket recv and send to get the username to set
+    std::string getUserNameFromUser(SOCKET socket_client);
 
 };
 
