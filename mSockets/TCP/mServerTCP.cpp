@@ -172,7 +172,7 @@ std::string mServerTCP::mRecv(mClient _client)
 	int read_buffer_size = 1024;
 	char* read_buffer = (char*)calloc(read_buffer_size, sizeof(char));
 
-	int bytes_recived = 0;
+
 
 	///
 	/// Okay we can go about this in 2 ways
@@ -183,14 +183,25 @@ std::string mServerTCP::mRecv(mClient _client)
 	///
 	/// First we can do an inital recv to determine message length then we can go from there in a loop
 
-	int packet_size;
+	
 	char packet_size_bytes[4];
 	recv(_client.getSocketClient(), packet_size_bytes, 4, 0);
+	int packet_size = serializer::bytesToInt<uint32_t>(packet_size_bytes);
+	
+	std::cout << "Server recv() pakcetsize: " << packet_size << std::endl;
 
-	std::cout << "Server recv()" << reinterpret_cast<int>(packet_size_bytes) << std::endl;
 
+	// Read packet until hit specified packet size
+	int bytes_recived = 0;
+	while (bytes_recived < packet_size){
+		bytes_recived += recv(_client.getSocketClient(), read_buffer, 1024, 0);
+		if (bytes_recived >= read_buffer_size){
+			// Double input buffer size
+			read_buffer = (char*)realloc(read_buffer, read_buffer_size *= 2);
+		}
+		std::cout << "Bytes recieved" << bytes_recived << std::endl;
+	}
 
-	// Will be rewritten once we have sorted endinness
 	// while ((bytes_recived += recv(_client.getSocketClient(), read_buffer, 1024, 0)) > 0){
 	// 	// Resize the read in buffer
 	// 	if (bytes_recived >= read_buffer_size){
@@ -201,14 +212,14 @@ std::string mServerTCP::mRecv(mClient _client)
 	// 	std::cout << "Bytes recieved" << bytes_recived << std::endl;
 	// }
 
-	bytes_recived = recv(_client.getSocketClient(), read_buffer, 1024, 0);
-	std::cout << "Bytes recieved" << bytes_recived << std::endl;
+	// bytes_recived = recv(_client.getSocketClient(), read_buffer, 1024, 0);
+	// std::cout << "Bytes recieved" << bytes_recived << std::endl;
 	
-	PACKET p = serializer::deserialize(read_buffer); 
-	
+	PACKET p = serializer::deserialize(read_buffer, packet_size); 
 	
 
 	std::string msg = read_buffer;
+	// Free packet buffer
 	free(read_buffer);
 	return msg;
 }

@@ -1,6 +1,22 @@
 #include "serializer.h"
 
 
+// Declaring static types
+// template<typename T>
+// static T bytesToInt(char* _bytes);
+
+// template<typename T, unsigned int U>
+// static std::array<std::byte, U> intToBytes(T _val);
+
+
+
+
+
+
+
+
+
+
 // TODO Maybe Add md5 checksum at a later day to verify integrity
 char* serializer::serialize(std::string _message, mClient _client, msgType _type){
 
@@ -55,30 +71,66 @@ char* serializer::serialize(std::string _message, mClient _client, msgType _type
 }
 
 
-PACKET serializer::deserialize(char* buffer){
-    // The inputted char* buffer will not include the size of the packet at the beginning
-    // as this is used to originally recieve the data
+PACKET serializer::deserialize(char* buffer, unsigned int size){
 
-    // Determine system endianess
-    if (std::endian::native == std::endian::little){
-        std::cout << "LITTLE ENDIAN" << std::endl;
-    }
-    else if (std::endian::native == std::endian::big){
-        std::cout << "BIG ENDIAN" << std::endl;
-    }
-    else{
-        std::cout << "UNKNOWN STD::ENDIAN::NATIVE" << std::endl;
-    }
+    // Get timestamp
+    char timeStamp[sizeof(time_t)];
+    std::copy(buffer, buffer + sizeof(time_t), timeStamp);
     
+    int time = 0;
+    // 64 bit value
+    if (sizeof(time_t) == 8)
+        time = bytesToInt<uint32_t>(timeStamp);
+    // 32 bit value
+    else time = bytesToInt<uint64_t>(timeStamp);
 
-    std::string sbuffer = buffer;
-    // For each char
-    for (char& b : sbuffer){
-        std::cout << static_cast<int>(b) << " ";
-    }
-    
+    char msgType;
+    std::copy(buffer + sizeof(time_t), buffer + sizeof(time_t), msgType);
+    // Copy over 1 byte for msgType
 
-    PACKET myPacket;
+    // Next 16 bytes are username
+    // char userName[16];
+    std::string userName;
+    std::copy(buffer + sizeof(time_t) + 1, buffer + sizeof(time_t) + 17, msgType);
+
+    // The rest are the message
+    std::string msg;
+    std::copy(buffer + sizeof(time_t) + 17, buffer + size, msg);
+
+    // Construct packet to return
+
+    // TODO change msgType::CONNECT to byte value
+    PACKET myPacket{size, time, msgType::CONNECT, userName, msg};
     return myPacket;
+}
 
+// Turn char* array to int
+// T - typename uint16_t, uint32_t, uint64_t
+template<typename T>
+T serializer::bytesToInt(char* _bytes){
+    // Copy and cast to unsigned char
+    T num = 0;
+    unsigned typeSize = sizeof(T);
+
+    for(unsigned int i = 0; i < typeSize; i++)
+    {
+        num += (static_cast<T>(static_cast<unsigned char>(_bytes[i])) << 8*(typeSize-i-1));
+    }
+    return num;
+}
+
+
+// Turn int to std::byte array
+// T - typename uint16_t, uint32_t, uint64_t
+// U - unsigned int, size of std::array
+template<typename T, unsigned int U>
+std::array<std::byte, U> serializer::intToBytes(T _val)
+{
+    const int size = U;
+    std::array<std::byte, size>bytes;
+
+    for (int i = 0; i < size; i++){
+        bytes[size-i-1] = static_cast<std::byte>((_val >> (8*i)) & 0xff);
+    }
+    return bytes;
 }

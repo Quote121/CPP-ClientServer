@@ -13,6 +13,15 @@
 #include <bit> // system endianness
 
 #include <iostream> // debugging
+#include <array>
+
+// For array copying
+#include <algorithm>
+
+
+
+
+
 
 //
 // We have 3 types of messages so far
@@ -39,10 +48,22 @@ struct PACKET{
 class serializer{
 
 public:
+
+
+    template<typename T>
+    static T bytesToInt(char* _bytes);
+
+    template<typename T, unsigned int U>
+    static std::array<std::byte, U> intToBytes(T _val);
+
+
+
+
+
     // Returns char* (bytes)
     // TODO later on evaluate wether switching to std::bytes is a good idea and worth it
     static char* serialize(std::string _message, mClient _client, msgType _type);
-    static PACKET deserialize(char * buffer);
+    static PACKET deserialize(char * buffer, unsigned int size);
 };
 
 
