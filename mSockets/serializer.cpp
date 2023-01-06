@@ -1,60 +1,24 @@
 #include "serializer.h"
 
+#include <array>
 
+#include <cstddef>
+#include <memory>
 // Declaring static types
 // template<typename T>
-// static T bytesToInt(char* _bytes);
+// T bytesToInt(char* _bytes);
 
 // template<typename T, unsigned int U>
-// static std::array<std::byte, U> intToBytes(T _val);
+// std::array<std::byte, U> intToBytes(T _val);
 
 
+template uint16_t serializer::bytesToInt(char* _bytes);
+template uint32_t serializer::bytesToInt(char* _bytes);
+template uint64_t serializer::bytesToInt(char* _bytes);
+
+// static definition
 
 
-
-
-
-
-
-
-// TODO Maybe Add md5 checksum at a later day to verify integrity
-char* serializer::serialize(std::string _message, mClient _client, msgType _type){
-
-    uint32_t size;
-    uint64_t time;
-
-    msgType type;
-
-    std::string username;
-    std::string message;
-
-
-    // Determine the size of the packet
-    type = _type;
-    username = _client.getAlias();
-    message = _message;
-    // Get time stamp
-    std::time_t result = std::time(nullptr);
-    time = result;
-
-    size = sizeof(type) + sizeof(username.c_str()) + sizeof(message.c_str()) + sizeof(time);
-
-    // Dont belive that std::byte has any advantages
-    char bytes[4096];
-    std::memset(bytes, 0, 4096); // Zero out buffer
-    
-    std::memcpy(&bytes[0], &size, sizeof(size)); // Size of packet
-    std::memcpy(&bytes[0+sizeof(size)], &time, sizeof(time)); // Time
-    std::memcpy(&bytes[0+sizeof(size)+sizeof(time)], &type, sizeof(type)); // Type
-    std::memcpy(&bytes[0+sizeof(size)+sizeof(time)+sizeof(type)], username.c_str(), sizeof(username.c_str())); // Username
-    std::memcpy(&bytes[0+sizeof(size)+sizeof(time)+sizeof(type)+sizeof(username)], message.c_str(), sizeof(message.c_str())); // Message
-
-
-    
-    std::cout << "PACKET PRINT OUT" << std::endl;
-    std::cout << "" << std::endl;
-
-    return bytes;
     //////////////////////////////////
     ///
     /// Packet structure
@@ -66,41 +30,95 @@ char* serializer::serialize(std::string _message, mClient _client, msgType _type
     /// the remaning size is the message from the user
     ///
     ///////////////////////////////////
-    // std::memcpy(bytes, testStr.data(), testStr.length());
+
+
+// TODO Maybe Add md5 checksum at a later day to verify integrity
+// returns the size of a packet in bytes excluding the size indicator at beginning of packet
+// 
+// returns uint32_t - size of packet in bytes
+//
+// char* bytes - the byte buffer to write to
+// std::string& _message - message written by user (empty if disconnect or connect)
+// mClinet& _client - client that send the message and so we can get the username from this
+// msgType _type - enum to show what type of msg we are sending
+uint32_t serializer::serialize(char* bytes, std::string& _message, mClient& _client, msgType _type){
+
+    uint32_t size;
+    uint64_t time;
+
+    char type;
+
+    std::string username;
+    std::string message;
+
+    // Get time stamp
+    time = std::time(nullptr);
+    type = static_cast<int>(_type);
+    username = _client.getAlias();
+    message = _message;
+
+    // Size of packet does not include the size of bytes
+    //     time           msg type       username            message
+    size = sizeof(time) + sizeof(type) + USERNAMESIZEBYTES + message.size();
+
+    // char bytes[PACKETSIZEBYTES];
+    std::memset(bytes, 0, PACKETSIZEBYTES);
+
+    // Convert int to bytes
+    std::array<std::byte, 4> bsize = intToBytes<uint32_t, 4>(size);
+    std::array<std::byte, 8> btime = intToBytes<uint64_t, 8>(time);
+
+    // copy memory to buffer
+    std::memcpy(bytes, &bsize, sizeof(size)); // Size of packet
+    std::memcpy(bytes+sizeof(size), &btime, sizeof(time)); // Time
+    std::memcpy(bytes+sizeof(size)+sizeof(time), &type, sizeof(type)); // Type
+    std::memcpy(bytes+sizeof(size)+sizeof(time)+sizeof(type), username.data(), username.size()); // Username
+    std::memcpy(bytes+sizeof(size)+sizeof(time)+sizeof(type)+USERNAMESIZEBYTES, message.data(), message.size()); // Message
+
+    // Debug print bytes
+    // std::cout << std::hex;
+    // for (int i = 0; i < size+4; i++){
+    //     std::cout << +std::to_integer<int>(std::byte(bytes[i])) << " ";
+    // }
+    // std::cout << std::dec << std::endl;
+
+    return size;
 
 }
 
 
+// Deserialize a stream of bytes into packet struct
+// char* buffer - input buffer to read from
+// unsigned int size - size of the packet
 PACKET serializer::deserialize(char* buffer, unsigned int size){
 
-    // Get timestamp
-    char timeStamp[sizeof(time_t)];
-    std::copy(buffer, buffer + sizeof(time_t), timeStamp);
+    // debug
+    // std::cout << std::hex;
+    // for (int i = 0; i < size; i++){
+    //     std::cout << +std::to_integer<int>(std::byte(buffer[i])) << " ";
+    // }
+    // std::cout << std::dec << std::endl;
     
-    int time = 0;
-    // 64 bit value
-    if (sizeof(time_t) == 8)
-        time = bytesToInt<uint32_t>(timeStamp);
-    // 32 bit value
-    else time = bytesToInt<uint64_t>(timeStamp);
+    // Get timestamp
+    char timeStamp[sizeof(uint64_t)];
+    std::copy(buffer, buffer + sizeof(uint64_t), timeStamp);
+    uint64_t time = bytesToInt<uint64_t>(timeStamp);;
 
-    char msgType;
-    std::copy(buffer + sizeof(time_t), buffer + sizeof(time_t), msgType);
-    // Copy over 1 byte for msgType
-
-    // Next 16 bytes are username
-    // char userName[16];
+    // Get msgType
+    char bmsgType;
+    std::copy(buffer + sizeof(uint64_t), buffer + sizeof(uint64_t) + sizeof(char), &bmsgType);
+    
+    // Get username
     std::string userName;
-    std::copy(buffer + sizeof(time_t) + 1, buffer + sizeof(time_t) + 17, msgType);
+    userName.assign(buffer + sizeof(uint64_t) + sizeof(char), buffer + sizeof(uint64_t) + sizeof(char) + USERNAMESIZEBYTES);
 
     // The rest are the message
+    // Read to end of buffer specified by size
     std::string msg;
-    std::copy(buffer + sizeof(time_t) + 17, buffer + size, msg);
+    msg.assign(buffer + sizeof(uint64_t) + sizeof(char) + USERNAMESIZEBYTES, buffer + size);
 
     // Construct packet to return
-
-    // TODO change msgType::CONNECT to byte value
-    PACKET myPacket{size, time, msgType::CONNECT, userName, msg};
+    PACKET myPacket{size, time, static_cast<msgType>(bmsgType), userName, msg};
     return myPacket;
 }
 
@@ -110,7 +128,7 @@ template<typename T>
 T serializer::bytesToInt(char* _bytes){
     // Copy and cast to unsigned char
     T num = 0;
-    unsigned typeSize = sizeof(T);
+    unsigned int typeSize = sizeof(T);
 
     for(unsigned int i = 0; i < typeSize; i++)
     {
@@ -119,8 +137,8 @@ T serializer::bytesToInt(char* _bytes){
     return num;
 }
 
-
-// Turn int to std::byte array
+// This can be sped up by passing the array via reference
+// Speed increase would be small as we stop the copy
 // T - typename uint16_t, uint32_t, uint64_t
 // U - unsigned int, size of std::array
 template<typename T, unsigned int U>

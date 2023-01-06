@@ -12,6 +12,7 @@
 #include <iostream>
 #include <memory>
 #include <mutex>
+#include <sstream>
 
 
 class mServerTCP{
@@ -60,11 +61,13 @@ public:
     std::string mRecv(mClient _client);
 
     // Send message to all clients
-    bool mBroadcast(std::string _msg);
+    bool mBroadcast(std::string& _message, mClient& _client, msgType _type);
 
     // Close all clients and server
     bool mClose();
 
+    
+    
     // All thread safe actions
     // Return a client fron the list specified by the index
     static mClient getClientAtIndex(int i);
@@ -77,6 +80,12 @@ public:
 
     // Socket recv and send to get the username to set
     std::string getUserNameFromUser(SOCKET socket_client);
+
+
+
+    // Creating a string to represent each socket type
+    std::string formatPacket(PACKET& pkt);
+
 
 };
 

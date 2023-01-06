@@ -5,6 +5,7 @@
 
 #include "../common.h"
 #include "../mClient.h"
+#include "../serializer.h"
 #include <iostream>
 #include <mutex>
 
@@ -38,7 +39,8 @@ public:
     std::string mRecv();
 
     // Send message to the server
-    bool mSend(std::string _msg);
+    // Here client is always the same and so maybe for future we get rid of this field as its more for server
+    bool mSend(std::string& _message, mClient& _client, msgType _type);
 
     // Close down the curretn socket
     bool mClose();

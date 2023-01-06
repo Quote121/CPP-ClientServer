@@ -43,6 +43,12 @@ public:
 
     std::string getAlias();
 
+    // DEBUG
+    void setAlias(std::string _alias){
+        alias = _alias;
+    }
+
+
 };
 
 #endif // MCLIENT_H

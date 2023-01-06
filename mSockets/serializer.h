@@ -18,6 +18,7 @@
 // For array copying
 #include <algorithm>
 
+#define MAXPACKETSIZE 4096
 
 
 
@@ -32,8 +33,8 @@
 // TODO check
 enum class msgType{
     CONNECT = static_cast<char>(0),
-    DISCONNECT = static_cast<char>(1),
-    STANDARD = static_cast<char>(2)
+    STANDARD = static_cast<char>(1),
+    DISCONNECT = static_cast<char>(2)
 };
 
 
@@ -48,6 +49,9 @@ struct PACKET{
 class serializer{
 
 public:
+    // serializer constants
+    static const int PACKETSIZEBYTES = 4096;
+    static const int USERNAMESIZEBYTES = 16;
 
 
     template<typename T>
@@ -62,7 +66,7 @@ public:
 
     // Returns char* (bytes)
     // TODO later on evaluate wether switching to std::bytes is a good idea and worth it
-    static char* serialize(std::string _message, mClient _client, msgType _type);
+    static uint32_t serialize(char* destBuffer, std::string& _message, mClient& _client, msgType _type);
     static PACKET deserialize(char * buffer, unsigned int size);
 };
 

@@ -143,6 +143,7 @@ bool mServerTCP::mAccept()
 }
 
 
+// Future method to send (DM to individual clients)
 bool mServerTCP::mSend(mClient _client, std::string _msg)
 {
 	// Call serializer here
@@ -151,13 +152,17 @@ bool mServerTCP::mSend(mClient _client, std::string _msg)
 	return true;
 }
 
+// Send to all connected clients
+bool mServerTCP::mBroadcast(std::string& _message, mClient& _client, msgType _type){
 
-bool mServerTCP::mBroadcast(std::string _msg){
+	char buffer[serializer::PACKETSIZEBYTES];
+	std::memset(buffer, 0, serializer::PACKETSIZEBYTES); // Zero out buffer to avoid garbage data
+	int size = serializer::serialize(buffer, _message, _client, _type);
 
     /* for each client */
     for(auto& c : clients){
         /* send msg */
-        send(c->getSocketClient(), _msg.c_str(), strlen(_msg.c_str()), 0);
+        send(c->getSocketClient(), buffer, size, 0);
     }
 
     return true;
@@ -168,61 +173,46 @@ std::string mServerTCP::mRecv(mClient _client)
 {
 	// A check to check if the socket is closed would be good here
 
-	// TODO check
-	int read_buffer_size = 1024;
-	char* read_buffer = (char*)calloc(read_buffer_size, sizeof(char));
+	int read_buffer_size = 1024; // for reading chuncks of data
+	char* read_buffer = (char*)calloc(serializer::PACKETSIZEBYTES, sizeof(char));
 
-
-
-	///
-	/// Okay we can go about this in 2 ways
-	/// 1st we can have a delimiter at the end to indicate the end of a message
-	/// 2nd we can have a predefined message size at the beginning
-	/// I like the second more as we can have more control over message sizes
-	/// such as in the case of a oversized message
-	///
-	/// First we can do an inital recv to determine message length then we can go from there in a loop
-
-	
+	// Get packet size	
 	char packet_size_bytes[4];
 	recv(_client.getSocketClient(), packet_size_bytes, 4, 0);
 	int packet_size = serializer::bytesToInt<uint32_t>(packet_size_bytes);
 	
 	std::cout << "Server recv() pakcetsize: " << packet_size << std::endl;
 
-
 	// Read packet until hit specified packet size
 	int bytes_recived = 0;
 	while (bytes_recived < packet_size){
+		// For future might have to write to temp buffer and then add to total buffer so that we can double size of char array
+		// if the packet is too big
 		bytes_recived += recv(_client.getSocketClient(), read_buffer, 1024, 0);
+		
+		// Packet is too big
+		if (bytes_recived > serializer::PACKETSIZEBYTES){
+			return "PACKET TOO BIG (-1)";
+		}
+
+		// Double char buffer
 		if (bytes_recived >= read_buffer_size){
-			// Double input buffer size
 			read_buffer = (char*)realloc(read_buffer, read_buffer_size *= 2);
 		}
 		std::cout << "Bytes recieved" << bytes_recived << std::endl;
 	}
-
-	// while ((bytes_recived += recv(_client.getSocketClient(), read_buffer, 1024, 0)) > 0){
-	// 	// Resize the read in buffer
-	// 	if (bytes_recived >= read_buffer_size){
-	// 		// Double input buffer size
-	// 		read_buffer = (char*)realloc(read_buffer, read_buffer_size *= 2);
-	// 	}
-	// // Keep reading while there is data
-	// 	std::cout << "Bytes recieved" << bytes_recived << std::endl;
-	// }
-
-	// bytes_recived = recv(_client.getSocketClient(), read_buffer, 1024, 0);
-	// std::cout << "Bytes recieved" << bytes_recived << std::endl;
 	
+	// Deserialize into packet struct and free read_buffer
 	PACKET p = serializer::deserialize(read_buffer, packet_size); 
-	
-
-	std::string msg = read_buffer;
-	// Free packet buffer
 	free(read_buffer);
-	return msg;
+
+
+	// Construct message based on type
+	return formatPacket(p);
 }
+
+
+
 
 bool mServerTCP::mClose()
 {
@@ -293,4 +283,42 @@ std::string mServerTCP::getUserNameFromUser(SOCKET socket_client){
 	std::string s = buffer;
 
 	return s;
+}
+
+
+std::string mServerTCP::formatPacket(PACKET& pkt){
+
+	/////////////////////////////
+	// based on packet type 
+	//
+	// pkt.type == msgType::CONNECT 
+	// "time user has connected"
+	// pkt.type == msgType::DISCONNECTED 
+	// "time user has disconnected"
+	// pkt.type == msgType::STANDARD 
+	// "time user : msg"
+	///////////////////////////////
+
+	std::stringstream ss;
+
+	switch(pkt.type){
+
+		case msgType::CONNECT:
+			ss << "[" << pkt.time << "]" << " user " << pkt.username << " has connected";
+			break;
+		case msgType::DISCONNECT:
+			ss << "[" << pkt.time << "]" << " user " << pkt.username << " has disconnected";
+			break;
+		case msgType::STANDARD:
+			ss << "[" << pkt.time << "]" << " " << pkt.username << " : " << pkt.message;
+			break;
+		// Fault not a valid type of packet
+		default:
+			ss << "\nNOT A VALID TYPE OF PACKET | mServerTCP::formatPacket()";
+	}
+	// Here as it might not be used
+	// Can be easily removed if need be
+	ss << "\n";
+
+	return ss.str();
 }

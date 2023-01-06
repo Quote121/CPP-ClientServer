@@ -1,5 +1,7 @@
 #include "mClientTCP.h"
 
+
+
 // Static variable definitions
 std::mutex mClientTCP::mutex_;
 mClientTCP* mClientTCP::pinstance_{nullptr};
@@ -85,14 +87,21 @@ bool mClientTCP::mConnect()
 // Recieve packet struct
 // From the server
 std::string mClientTCP::mRecv()
-{
+{	
+
+	// TODO CHANGE AND RETURN FORMATTED PACKET STRING i.e 
+	// [time] user [name] has connected/disconnected
+	// [time] user : message
 	// C like for speed
 	
 	int read_buffer_size = 1024;
+	// TODO // Maybe rethink this high performance C like code for more modern safe code
+	// since we have recv and realloc which can both throw errors
 	char* read_buffer = (char*)calloc(read_buffer_size, sizeof(char));
 
 	int bytes_recived = 0;
 	do {
+		
 		// Resize the read in buffer
 		if (bytes_recived >= read_buffer_size){
 			// Double input buffer size
@@ -112,10 +121,16 @@ std::string mClientTCP::mRecv()
 	return msg;
 }
 
-bool mClientTCP::mSend(std::string _msg)
+
+bool mClientTCP::mSend(std::string& _message, mClient& _client, msgType _type)
 {
+	char buffer[serializer::PACKETSIZEBYTES];
+	std::memset(buffer, 0, serializer::PACKETSIZEBYTES); // Zero out buffer to avoid garbage data
+	int size = serializer::serialize(buffer, _message, _client, _type);
+
 	// Send to socket peer (server)
-	send(socket_peer, _msg.c_str(), strlen(_msg.c_str()), 0);
+	send(socket_peer, buffer, size, 0);
+	
 	return true;
 }
 
